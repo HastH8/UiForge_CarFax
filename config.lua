@@ -1,30 +1,32 @@
 Config = {}
 
-Config.Framework = 'auto' -- auto | qb | qbox | esx
-Config.Debug = false -- Enable debug logging
-Config.RateLimitMs = 1500 -- Rate limit for CarFax requests per player
+Config.Framework = 'auto'
+Config.Debug = true
+Config.RateLimitMs = 1500
 
-Config.UseMileage = true -- Enable mileage tracking
-Config.PlateMaxLength = 12 -- Maximum length for vehicle plates
-Config.VinLength = 17 -- Length for vehicle VINs
-Config.DefaultRegistrationStatus = 'valid' -- Default registration status for vehicles
-Config.ReportIdPattern = 'CARFAX-AAAA-111111' -- Pattern for report IDs (A=letter, 1=number)
-Config.VinPattern = 'AAAAAAAAA111111111' -- Pattern for VINs (A=letter, 1=number)
+Config.UseMileage = true
+Config.PlateMaxLength = 12
+Config.VinLength = 17
+Config.DefaultRegistrationStatus = 'valid'
+Config.ReportIdPattern = 'CARFAX-AAAA-111111'
+Config.VinPattern = 'AAAAAAAA111111111'
 
-Config.AdminGroups = {'admin', 'god'} -- Admin groups for accessing all reports
-Config.AdminAce = 'uiforge.carfax' -- Admin ACE permission 
+Config.AdminGroups = {'admin', 'god'}
+Config.AdminAce = 'uiforge.carfax'
 
-Config.Commands = { -- Command configurations
+Config.Commands = {
     service = {
-        name = 'servicecar', -- Command name
+        name = 'servicecar',
         job = {
-            mechanic = 0
-        }, -- Job restrictions (job name = min grade)
-        description = 'command_service_description' -- Description key for localization
+            mechanic = 0,
+            police = 0
+        },
+        description = 'command_service_description'
     },
     incident = {
         name = 'incident',
         job = {
+            mechanic = 0,
             police = 0
         },
         description = 'command_incident_description'
@@ -32,7 +34,8 @@ Config.Commands = { -- Command configurations
     owneredit = {
         name = 'owneredit',
         job = {
-            dmv = 0
+            mechanic = 0,
+            police = 0
         },
         description = 'command_owner_description'
     },
@@ -43,14 +46,13 @@ Config.Commands = { -- Command configurations
     }
 }
 
-Config.JobLabels = { -- Job label localization keys
+Config.JobLabels = {
     mechanic = 'job_label_mechanic',
     police = 'job_label_police',
     dmv = 'job_label_dmv'
 }
 
-Config.ServiceTypes = { -- Service type options
-{
+Config.ServiceTypes = {{
     value = 'oil_change',
     label = 'service_type_oil_change'
 }, {
@@ -67,8 +69,7 @@ Config.ServiceTypes = { -- Service type options
     label = 'service_type_custom'
 }}
 
-Config.IncidentTypes = { -- Incident type options
-{
+Config.IncidentTypes = {{
     value = 'insurance_claim',
     label = 'incident_type_insurance_claim',
     private = false
@@ -90,8 +91,7 @@ Config.IncidentTypes = { -- Incident type options
     private = true
 }}
 
-Config.RegistrationStatuses = { -- Registration status options
-{
+Config.RegistrationStatuses = {{
     value = 'valid',
     label = 'registration_valid'
 }, {
@@ -105,7 +105,7 @@ Config.RegistrationStatuses = { -- Registration status options
     label = 'registration_revoked'
 }}
 
-Config.ReportVisibility = { -- Report visibility settings
+Config.ReportVisibility = {
     showIdentifiers = {
         mechanic = true,
         police = true,
@@ -117,7 +117,7 @@ Config.ReportVisibility = { -- Report visibility settings
     }
 }
 
-Config.TextLimits = { -- Text field character limits
+Config.TextLimits = {
     notes = 240,
     customLabel = 48,
     jobLabel = 48

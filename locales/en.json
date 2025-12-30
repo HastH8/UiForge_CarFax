@@ -1,6 +1,7 @@
 {
   "app_title": "Vehicle History Report",
   "app_subtitle": "Official Vehicle History File",
+  "brand_label": "CARFAX",
   "header_vin": "VIN",
   "header_plate": "Plate",
   "header_report_id": "Report ID",
@@ -64,6 +65,9 @@
   "notify_rate_limited": "Please wait before trying again.",
   "notify_missing_vehicle": "No vehicle data available.",
   "notify_invalid_registration": "Registration status is required.",
+  "debug_service_added": "Service record added for %s.",
+  "debug_incident_added": "Incident record added for %s.",
+  "debug_owner_added": "Ownership record added for %s.",
   "command_service_description": "Add a service record",
   "command_incident_description": "Add an incident record",
   "command_owner_description": "Add an ownership change",
@@ -88,5 +92,9 @@
   "registration_revoked": "Revoked",
   "owner_index_label": "Owner #%s",
   "ui_close": "Close",
-  "ui_page": "Page"
+  "ui_page": "Page",
+  "ui_pages": "Pages",
+  "ui_prev_page": "Previous Page",
+  "ui_next_page": "Next Page",
+  "placeholder_empty": "-"
 }

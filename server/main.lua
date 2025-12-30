@@ -243,7 +243,6 @@ local function validateOwnerPayload(source, payload)
         registration_status = status,
         notes = notes,
         owner_identifier = ownerIdentifier,
-        job_label = resolveJobLabel(source, payload),
         author_identifier = resolveAuthorIdentifier(source, payload)
     }
 end
@@ -385,7 +384,7 @@ local function addServiceRecord(source, payload, enforceAuth)
 
     DB.AddServiceRecord(vehicle.id, record)
 
-    debugLog('Service record added for %s', data.plate)
+    debugLog(locale('debug_service_added', data.plate))
     return true
 end
 
@@ -420,7 +419,7 @@ local function addIncidentRecord(source, payload, enforceAuth)
 
     DB.AddIncidentRecord(vehicle.id, record)
 
-    debugLog('Incident record added for %s', data.plate)
+    debugLog(locale('debug_incident_added', data.plate))
     return true
 end
 
@@ -457,7 +456,7 @@ local function addOwnerRecord(source, payload, enforceAuth)
     DB.AddOwnerRecord(vehicle.id, record)
     DB.UpdateVehicleRegistration(vehicle.id, data.registration_status)
 
-    debugLog('Owner record added for %s', data.plate)
+    debugLog(locale('debug_owner_added', data.plate))
     return true
 end
 
@@ -517,7 +516,14 @@ RegisterNetEvent(Shared.ServerEvents.AddOwner, function(payload)
 end)
 
 local function registerCommand(commandConfig, eventName)
-    RegisterCommand(commandConfig.name, function(source)
+    if not commandConfig or not commandConfig.name then
+        return
+    end
+
+    lib.addCommand(commandConfig.name, {
+        help = locale(commandConfig.description),
+        restricted = false
+    }, function(source)
         if source == 0 then
             return
         end
@@ -528,7 +534,7 @@ local function registerCommand(commandConfig, eventName)
         end
 
         TriggerClientEvent(eventName, source)
-    end, false)
+    end)
 end
 
 registerCommand(Config.Commands.service, Shared.Events.OpenServiceInput)

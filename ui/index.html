@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title></title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app" class="app" aria-hidden="true">
+    <div class="viewer">
+      <div class="toolbar">
+        <div class="toolbar-title" id="toolbarTitle"></div>
+        <button class="icon-button" id="closeBtn" type="button" aria-label="">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6L6 18" />
+            <path d="M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="page-stage" id="pageStage" tabindex="0">
+        <button class="nav-button nav-prev" id="prevBtn" type="button" aria-label="">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        </button>
+        <div class="spread" id="spread">
+          <div class="spread-slot left" id="leftSlot"></div>
+          <div class="spine" id="spine" aria-hidden="true"></div>
+          <div class="spread-slot right" id="rightSlot"></div>
+        </div>
+        <button class="nav-button nav-next" id="nextBtn" type="button" aria-label="">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </button>
+      </div>
+      <div class="page-measure" id="pageMeasure" aria-hidden="true"></div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
