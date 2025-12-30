@@ -8,7 +8,6 @@ Shared.Events = {
     OpenOwnerInput = Shared.Resource .. ':openOwnerInput',
     OpenReport = Shared.Resource .. ':openReport',
     OpenVinLookup = Shared.Resource .. ':openVinLookup',
-    OpenDebugMode = Shared.Resource .. ':openDebugMode',
     Notify = Shared.Resource .. ':notify'
 }
 

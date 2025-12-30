@@ -707,7 +707,6 @@ registerCommand(Config.Commands.incident, Shared.Events.OpenIncidentInput)
 registerCommand(Config.Commands.owneredit, Shared.Events.OpenOwnerInput)
 registerCommand(Config.Commands.carfax, Shared.Events.OpenReport)
 registerCommand(Config.Commands.vin, Shared.Events.OpenVinLookup)
-registerCommand(Config.Commands.debugmode, Shared.Events.OpenDebugMode)
 
 exports('AddService', function(plate, data)
     return addServiceRecord(0, {

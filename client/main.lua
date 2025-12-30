@@ -96,33 +96,29 @@ local function openServiceDialog()
         autoMileage = getJgMileage(vehicle, plate)
     end
 
-    local fields = {
-        {
-            key = 'plate',
-            input = {
-                type = 'input',
-                label = locale('input_plate'),
-                default = plate,
-                required = true
-            }
-        },
-        {
-            key = 'service_type',
-            input = {
-                type = 'select',
-                label = locale('input_service_type'),
-                options = buildOptions(Config.ServiceTypes),
-                required = true
-            }
-        },
-        {
-            key = 'custom_label',
-            input = {
-                type = 'input',
-                label = locale('input_service_custom')
-            }
+    local fields = {{
+        key = 'plate',
+        input = {
+            type = 'input',
+            label = locale('input_plate'),
+            default = plate,
+            required = true
         }
-    }
+    }, {
+        key = 'service_type',
+        input = {
+            type = 'select',
+            label = locale('input_service_type'),
+            options = buildOptions(Config.ServiceTypes),
+            required = true
+        }
+    }, {
+        key = 'custom_label',
+        input = {
+            type = 'input',
+            label = locale('input_service_custom')
+        }
+    }}
 
     if Config.UseMileage then
         fields[#fields + 1] = {
@@ -163,48 +159,42 @@ end
 local function openIncidentDialog()
     local plate = getVehiclePlate()
 
-    local fields = {
-        {
-            key = 'plate',
-            input = {
-                type = 'input',
-                label = locale('input_plate'),
-                default = plate,
-                required = true
-            }
-        },
-        {
-            key = 'incident_type',
-            input = {
-                type = 'select',
-                label = locale('input_incident_type'),
-                options = buildOptions(Config.IncidentTypes),
-                required = true
-            }
-        },
-        {
-            key = 'custom_label',
-            input = {
-                type = 'input',
-                label = locale('input_incident_custom')
-            }
-        },
-        {
-            key = 'notes',
-            input = {
-                type = 'textarea',
-                label = locale('input_notes'),
-                required = true
-            }
-        },
-        {
-            key = 'job_label',
-            input = {
-                type = 'input',
-                label = locale('input_job_label')
-            }
+    local fields = {{
+        key = 'plate',
+        input = {
+            type = 'input',
+            label = locale('input_plate'),
+            default = plate,
+            required = true
         }
-    }
+    }, {
+        key = 'incident_type',
+        input = {
+            type = 'select',
+            label = locale('input_incident_type'),
+            options = buildOptions(Config.IncidentTypes),
+            required = true
+        }
+    }, {
+        key = 'custom_label',
+        input = {
+            type = 'input',
+            label = locale('input_incident_custom')
+        }
+    }, {
+        key = 'notes',
+        input = {
+            type = 'textarea',
+            label = locale('input_notes'),
+            required = true
+        }
+    }, {
+        key = 'job_label',
+        input = {
+            type = 'input',
+            label = locale('input_job_label')
+        }
+    }}
 
     local payload = runDialog('input_incident_title', fields)
     if not payload then
@@ -217,16 +207,14 @@ end
 local function openOwnerDialog()
     local _, plate = getVehicleTarget()
     if not plate then
-        local platePayload = runDialog('input_owner_plate_title', {
-            {
-                key = 'plate',
-                input = {
-                    type = 'input',
-                    label = locale('input_plate'),
-                    required = true
-                }
+        local platePayload = runDialog('input_owner_plate_title', {{
+            key = 'plate',
+            input = {
+                type = 'input',
+                label = locale('input_plate'),
+                required = true
             }
-        })
+        }})
 
         if not platePayload then
             return
@@ -243,48 +231,42 @@ local function openOwnerDialog()
         end
     end
 
-    local fields = {
-        {
-            key = 'plate',
-            input = {
-                type = 'input',
-                label = locale('input_plate'),
-                default = plate,
-                required = true
-            }
-        },
-        {
-            key = 'vin',
-            input = {
-                type = 'input',
-                label = locale('input_vin'),
-                default = vinDefault
-            }
-        },
-        {
-            key = 'registration_status',
-            input = {
-                type = 'select',
-                label = locale('input_registration'),
-                options = buildOptions(Config.RegistrationStatuses),
-                required = true
-            }
-        },
-        {
-            key = 'notes',
-            input = {
-                type = 'textarea',
-                label = locale('input_notes')
-            }
-        },
-        {
-            key = 'owner_identifier',
-            input = {
-                type = 'input',
-                label = locale('input_owner_identifier')
-            }
+    local fields = {{
+        key = 'plate',
+        input = {
+            type = 'input',
+            label = locale('input_plate'),
+            default = plate,
+            required = true
         }
-    }
+    }, {
+        key = 'vin',
+        input = {
+            type = 'input',
+            label = locale('input_vin'),
+            default = vinDefault
+        }
+    }, {
+        key = 'registration_status',
+        input = {
+            type = 'select',
+            label = locale('input_registration'),
+            options = buildOptions(Config.RegistrationStatuses),
+            required = true
+        }
+    }, {
+        key = 'notes',
+        input = {
+            type = 'textarea',
+            label = locale('input_notes')
+        }
+    }, {
+        key = 'owner_identifier',
+        input = {
+            type = 'input',
+            label = locale('input_owner_identifier')
+        }
+    }}
 
     local payload = runDialog('input_owner_title', fields)
     if not payload then
@@ -297,16 +279,14 @@ end
 local function openVinLookup()
     local plate = getVehiclePlate()
     if not plate then
-        local payload = runDialog('input_vin_title', {
-            {
-                key = 'plate',
-                input = {
-                    type = 'input',
-                    label = locale('input_plate'),
-                    required = true
-                }
+        local payload = runDialog('input_vin_title', {{
+            key = 'plate',
+            input = {
+                type = 'input',
+                label = locale('input_plate'),
+                required = true
             }
-        })
+        }})
 
         if not payload then
             return
@@ -319,13 +299,25 @@ local function openVinLookup()
     if not response or not response.ok then
         local reason = response and response.reason
         if reason == 'rate_limited' then
-            lib.notify({ type = 'error', description = locale('notify_rate_limited') })
+            lib.notify({
+                type = 'error',
+                description = locale('notify_rate_limited')
+            })
         elseif reason == 'invalid_plate' then
-            lib.notify({ type = 'error', description = locale('notify_invalid_plate') })
+            lib.notify({
+                type = 'error',
+                description = locale('notify_invalid_plate')
+            })
         elseif reason == 'not_found' then
-            lib.notify({ type = 'error', description = locale('notify_vin_not_found') })
+            lib.notify({
+                type = 'error',
+                description = locale('notify_vin_not_found')
+            })
         else
-            lib.notify({ type = 'error', description = locale('notify_vin_unavailable') })
+            lib.notify({
+                type = 'error',
+                description = locale('notify_vin_unavailable')
+            })
         end
 
         return
@@ -334,30 +326,6 @@ local function openVinLookup()
     lib.notify({
         description = string.format(locale('notify_vin_found'), response.vin)
     })
-end
-
-local function openDebugMode()
-    local _, plate = getVehicleTarget()
-    if not plate then
-        local payload = runDialog('input_debug_title', {
-            {
-                key = 'plate',
-                input = {
-                    type = 'input',
-                    label = locale('input_plate'),
-                    required = true
-                }
-            }
-        })
-
-        if not payload then
-            return
-        end
-
-        plate = payload.plate
-    end
-
-    TriggerServerEvent(Shared.ServerEvents.DebugSeed, { plate = plate })
 end
 
 local function buildUiLocale()
@@ -404,16 +372,14 @@ local function openReport()
 
     local plate = getVehiclePlate()
     if not plate then
-        local payload = runDialog('input_report_title', {
-            {
-                key = 'plate',
-                input = {
-                    type = 'input',
-                    label = locale('input_plate'),
-                    required = true
-                }
+        local payload = runDialog('input_report_title', {{
+            key = 'plate',
+            input = {
+                type = 'input',
+                label = locale('input_plate'),
+                required = true
             }
-        })
+        }})
 
         if not payload then
             return
@@ -422,19 +388,33 @@ local function openReport()
         plate = payload.plate
     end
 
-    lib.notify({ description = locale('report_loading') })
+    lib.notify({
+        description = locale('report_loading')
+    })
 
     local response = lib.callback.await(Shared.Callbacks.GetReport, false, plate)
     if not response or not response.ok then
         local reason = response and response.reason
         if reason == 'rate_limited' then
-            lib.notify({ type = 'error', description = locale('notify_rate_limited') })
+            lib.notify({
+                type = 'error',
+                description = locale('notify_rate_limited')
+            })
         elseif reason == 'invalid_plate' then
-            lib.notify({ type = 'error', description = locale('notify_invalid_plate') })
+            lib.notify({
+                type = 'error',
+                description = locale('notify_invalid_plate')
+            })
         elseif reason == 'not_found' then
-            lib.notify({ type = 'error', description = locale('report_not_found') })
+            lib.notify({
+                type = 'error',
+                description = locale('report_not_found')
+            })
         else
-            lib.notify({ type = 'error', description = locale('notify_report_unavailable') })
+            lib.notify({
+                type = 'error',
+                description = locale('notify_report_unavailable')
+            })
         end
 
         return
@@ -455,14 +435,18 @@ local function closeReport()
         return
     end
 
-    SendNUIMessage({ type = 'close' })
+    SendNUIMessage({
+        type = 'close'
+    })
     SetNuiFocus(false, false)
     isOpen = false
 end
 
 RegisterNUICallback(Shared.NuiCallbacks.Close, function(_, cb)
     closeReport()
-    cb({ ok = true })
+    cb({
+        ok = true
+    })
 end)
 
 RegisterNetEvent(Shared.Events.OpenServiceInput, function()
@@ -483,10 +467,6 @@ end)
 
 RegisterNetEvent(Shared.Events.OpenVinLookup, function()
     openVinLookup()
-end)
-
-RegisterNetEvent(Shared.Events.OpenDebugMode, function()
-    openDebugMode()
 end)
 
 AddEventHandler('onResourceStop', function(resource)

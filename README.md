@@ -43,7 +43,6 @@ ensure UiForge_CarFax
 - `/owneredit` (dmv jobs)
 - `/carfax` (everyone)
 - `/vin` (everyone)
-- `/debugmode` (admin only)
 
 ## Exports
 

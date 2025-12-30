@@ -50,13 +50,13 @@ Config.Commands = {
         name = 'vin',
         job = nil,
         description = 'command_vin_description'
-    },
-    debugmode = {
-        name = 'debugmode',
-        job = nil,
-        adminOnly = true,
-        description = 'command_debug_description'
     }
+    -- debugmode = {
+    --     name = 'debugmode',
+    --     job = nil,
+    --     adminOnly = true,
+    --     description = 'command_debug_description'
+    -- }
 }
 
 Config.JobLabels = {
