@@ -224,6 +224,48 @@ local function openOwnerDialog()
     TriggerServerEvent(Shared.ServerEvents.AddOwner, payload)
 end
 
+local function openVinLookup()
+    local plate = getVehiclePlate()
+    if not plate then
+        local payload = runDialog('input_vin_title', {
+            {
+                key = 'plate',
+                input = {
+                    type = 'input',
+                    label = locale('input_plate'),
+                    required = true
+                }
+            }
+        })
+
+        if not payload then
+            return
+        end
+
+        plate = payload.plate
+    end
+
+    local response = lib.callback.await(Shared.Callbacks.GetVin, false, plate)
+    if not response or not response.ok then
+        local reason = response and response.reason
+        if reason == 'rate_limited' then
+            lib.notify({ type = 'error', description = locale('notify_rate_limited') })
+        elseif reason == 'invalid_plate' then
+            lib.notify({ type = 'error', description = locale('notify_invalid_plate') })
+        elseif reason == 'not_found' then
+            lib.notify({ type = 'error', description = locale('notify_vin_not_found') })
+        else
+            lib.notify({ type = 'error', description = locale('notify_vin_unavailable') })
+        end
+
+        return
+    end
+
+    lib.notify({
+        description = string.format(locale('notify_vin_found'), response.vin)
+    })
+end
+
 local function buildUiLocale()
     return {
         app_title = locale('app_title'),
@@ -340,6 +382,10 @@ end)
 
 RegisterNetEvent(Shared.Events.OpenReport, function()
     openReport()
+end)
+
+RegisterNetEvent(Shared.Events.OpenVinLookup, function()
+    openVinLookup()
 end)
 
 AddEventHandler('onResourceStop', function(resource)

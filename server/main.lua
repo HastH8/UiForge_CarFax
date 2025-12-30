@@ -482,6 +482,24 @@ lib.callback.register(Shared.Callbacks.GetReport, function(source, plate)
     return { ok = true, data = sanitized }
 end)
 
+lib.callback.register(Shared.Callbacks.GetVin, function(source, plate)
+    if isRateLimited(source, 'vin') then
+        return { ok = false, reason = 'rate_limited' }
+    end
+
+    local normalized = Utils.normalizePlate(plate)
+    if not Utils.isValidPlate(normalized) then
+        return { ok = false, reason = 'invalid_plate' }
+    end
+
+    local vehicle = DB.EnsureVehicle(normalized, nil, nil)
+    if not vehicle then
+        return { ok = false, reason = 'not_found' }
+    end
+
+    return { ok = true, vin = vehicle.vin }
+end)
+
 RegisterNetEvent(Shared.ServerEvents.AddService, function(payload)
     local source = source
     local ok, errorKey = addServiceRecord(source, payload, true)
@@ -541,6 +559,7 @@ registerCommand(Config.Commands.service, Shared.Events.OpenServiceInput)
 registerCommand(Config.Commands.incident, Shared.Events.OpenIncidentInput)
 registerCommand(Config.Commands.owneredit, Shared.Events.OpenOwnerInput)
 registerCommand(Config.Commands.carfax, Shared.Events.OpenReport)
+registerCommand(Config.Commands.vin, Shared.Events.OpenVinLookup)
 
 exports('AddService', function(plate, data)
     return addServiceRecord(0, { plate = plate, service_type = data and data.service_type, custom_label = data and data.custom_label, notes = data and data.notes, job_label = data and data.job_label, author_identifier = data and data.author_identifier, mileage = data and data.mileage, vin = data and data.vin }, false)

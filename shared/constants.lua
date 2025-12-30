@@ -7,6 +7,7 @@ Shared.Events = {
     OpenIncidentInput = Shared.Resource .. ':openIncidentInput',
     OpenOwnerInput = Shared.Resource .. ':openOwnerInput',
     OpenReport = Shared.Resource .. ':openReport',
+    OpenVinLookup = Shared.Resource .. ':openVinLookup',
     Notify = Shared.Resource .. ':notify'
 }
 
@@ -17,7 +18,8 @@ Shared.ServerEvents = {
 }
 
 Shared.Callbacks = {
-    GetReport = Shared.Resource .. ':getReport'
+    GetReport = Shared.Resource .. ':getReport',
+    GetVin = Shared.Resource .. ':getVin'
 }
 
 Shared.NuiCallbacks = {

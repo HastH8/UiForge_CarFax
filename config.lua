@@ -43,6 +43,11 @@ Config.Commands = {
         name = 'carfax',
         job = nil,
         description = 'command_carfax_description'
+    },
+    vin = {
+        name = 'vin',
+        job = nil,
+        description = 'command_vin_description'
     }
 }
 

@@ -35,6 +35,7 @@ ensure UiForge_CarFax
 - `/incident` (police jobs)
 - `/owneredit` (dmv jobs)
 - `/carfax` (everyone)
+- `/vin` (everyone)
 
 ## Exports
 
