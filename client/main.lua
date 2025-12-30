@@ -1,6 +1,6 @@
 local isOpen = false
 
-local function getVehiclePlate()
+local function getVehicleTarget()
     local ped = PlayerPedId()
     local vehicle = GetVehiclePedIsIn(ped, false)
 
@@ -12,10 +12,48 @@ local function getVehiclePlate()
     end
 
     if vehicle ~= 0 then
-        return GetVehicleNumberPlateText(vehicle)
+        return vehicle, GetVehicleNumberPlateText(vehicle)
     end
 
-    return nil
+    return 0, nil
+end
+
+local function getVehiclePlate()
+    local _, plate = getVehicleTarget()
+    return plate
+end
+
+local function getJgMileage(vehicle, plate)
+    if not Config.UseJgMileage then
+        return nil
+    end
+
+    local resource = Config.JgMileageResource or 'jg-vehiclemileage'
+    if GetResourceState(resource) ~= 'started' then
+        return nil
+    end
+
+    local ok, mileage
+    if vehicle and vehicle ~= 0 then
+        ok, mileage = pcall(function()
+            return exports[resource]:getMileageByEntity(vehicle)
+        end)
+    elseif plate then
+        ok, mileage = pcall(function()
+            return exports[resource]:getMileageByPlate(plate)
+        end)
+    end
+
+    if not ok or mileage == false or mileage == nil then
+        return nil
+    end
+
+    local value = tonumber(mileage)
+    if not value then
+        return nil
+    end
+
+    return math.floor(value + 0.5)
 end
 
 local function buildOptions(list)
@@ -52,7 +90,11 @@ local function runDialog(titleKey, fields)
 end
 
 local function openServiceDialog()
-    local plate = getVehiclePlate()
+    local vehicle, plate = getVehicleTarget()
+    local autoMileage
+    if Config.UseMileage then
+        autoMileage = getJgMileage(vehicle, plate)
+    end
 
     local fields = {
         {
@@ -87,7 +129,8 @@ local function openServiceDialog()
             key = 'mileage',
             input = {
                 type = 'number',
-                label = locale('input_mileage')
+                label = locale('input_mileage'),
+                default = autoMileage
             }
         }
     end
@@ -172,7 +215,33 @@ local function openIncidentDialog()
 end
 
 local function openOwnerDialog()
-    local plate = getVehiclePlate()
+    local _, plate = getVehicleTarget()
+    if not plate then
+        local platePayload = runDialog('input_owner_plate_title', {
+            {
+                key = 'plate',
+                input = {
+                    type = 'input',
+                    label = locale('input_plate'),
+                    required = true
+                }
+            }
+        })
+
+        if not platePayload then
+            return
+        end
+
+        plate = platePayload.plate
+    end
+
+    local vinDefault
+    if plate then
+        local response = lib.callback.await(Shared.Callbacks.GetVin, false, plate)
+        if response and response.ok then
+            vinDefault = response.vin
+        end
+    end
 
     local fields = {
         {
@@ -188,7 +257,8 @@ local function openOwnerDialog()
             key = 'vin',
             input = {
                 type = 'input',
-                label = locale('input_vin')
+                label = locale('input_vin'),
+                default = vinDefault
             }
         },
         {
@@ -266,10 +336,35 @@ local function openVinLookup()
     })
 end
 
+local function openDebugMode()
+    local _, plate = getVehicleTarget()
+    if not plate then
+        local payload = runDialog('input_debug_title', {
+            {
+                key = 'plate',
+                input = {
+                    type = 'input',
+                    label = locale('input_plate'),
+                    required = true
+                }
+            }
+        })
+
+        if not payload then
+            return
+        end
+
+        plate = payload.plate
+    end
+
+    TriggerServerEvent(Shared.ServerEvents.DebugSeed, { plate = plate })
+end
+
 local function buildUiLocale()
     return {
         app_title = locale('app_title'),
         app_subtitle = locale('app_subtitle'),
+        brand_label = locale('brand_label'),
         header_vin = locale('header_vin'),
         header_plate = locale('header_plate'),
         header_report_id = locale('header_report_id'),
@@ -296,7 +391,9 @@ local function buildUiLocale()
         status_private = locale('status_private'),
         status_public = locale('status_public'),
         ui_close = locale('ui_close'),
-        ui_page = locale('ui_page')
+        ui_page = locale('ui_page'),
+        ui_prev_page = locale('ui_prev_page'),
+        ui_next_page = locale('ui_next_page')
     }
 end
 
@@ -386,6 +483,10 @@ end)
 
 RegisterNetEvent(Shared.Events.OpenVinLookup, function()
     openVinLookup()
+end)
+
+RegisterNetEvent(Shared.Events.OpenDebugMode, function()
+    openDebugMode()
 end)
 
 AddEventHandler('onResourceStop', function(resource)

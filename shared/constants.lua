@@ -8,13 +8,15 @@ Shared.Events = {
     OpenOwnerInput = Shared.Resource .. ':openOwnerInput',
     OpenReport = Shared.Resource .. ':openReport',
     OpenVinLookup = Shared.Resource .. ':openVinLookup',
+    OpenDebugMode = Shared.Resource .. ':openDebugMode',
     Notify = Shared.Resource .. ':notify'
 }
 
 Shared.ServerEvents = {
     AddService = Shared.Resource .. ':addService',
     AddIncident = Shared.Resource .. ':addIncident',
-    AddOwner = Shared.Resource .. ':addOwner'
+    AddOwner = Shared.Resource .. ':addOwner',
+    DebugSeed = Shared.Resource .. ':debugSeed'
 }
 
 Shared.Callbacks = {

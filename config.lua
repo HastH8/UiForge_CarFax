@@ -5,6 +5,8 @@ Config.Debug = true
 Config.RateLimitMs = 1500
 
 Config.UseMileage = true
+Config.UseJgMileage = true
+Config.JgMileageResource = 'jg-vehiclemileage'
 Config.PlateMaxLength = 12
 Config.VinLength = 17
 Config.DefaultRegistrationStatus = 'valid'
@@ -48,6 +50,12 @@ Config.Commands = {
         name = 'vin',
         job = nil,
         description = 'command_vin_description'
+    },
+    debugmode = {
+        name = 'debugmode',
+        job = nil,
+        adminOnly = true,
+        description = 'command_debug_description'
     }
 }
 

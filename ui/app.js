@@ -370,6 +370,29 @@ function updatePageNumbers() {
   });
 }
 
+function syncHeaderTopLine(reportData) {
+  const generatedValue = formatDate(reportData.generated_at);
+  const reportId = reportData.vehicle && reportData.vehicle.report_id;
+
+  pages.forEach((pageBundle) => {
+    const header = pageBundle.page.querySelector('.page-header');
+    if (!header) {
+      return;
+    }
+
+    const topLine = header.querySelector('.header-topline');
+    if (!topLine) {
+      return;
+    }
+
+    topLine.replaceChildren(
+      buildTopItem(locale.header_generated, generatedValue, 'left'),
+      createEl('div', 'center', locale.app_title),
+      buildTopItem(locale.header_report_id, reportId, 'right')
+    );
+  });
+}
+
 function createBlankPage() {
   return createEl('div', 'page page-blank');
 }
@@ -524,6 +547,10 @@ function renderReport(reportData) {
     return;
   }
 
+  if (!reportData.generated_at) {
+    reportData.generated_at = Math.floor(Date.now() / 1000);
+  }
+
   toolbarTitle.textContent = locale.app_title;
   closeBtn.setAttribute('aria-label', locale.ui_close);
   prevBtn.setAttribute('aria-label', locale.ui_prev_page);
@@ -534,6 +561,7 @@ function renderReport(reportData) {
   currentPage = appendSection(reportData, buildIncidentSection(reportData), currentPage);
   appendSection(reportData, buildOwnershipSection(reportData), currentPage);
 
+  syncHeaderTopLine(reportData);
   updatePageNumbers();
   buildSpreads();
   requestAnimationFrame(() => {

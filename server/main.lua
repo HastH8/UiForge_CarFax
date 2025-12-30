@@ -45,7 +45,9 @@ local function isRateLimited(source, key)
     local playerLimits = rateLimits[source]
 
     if not playerLimits then
-        rateLimits[source] = { [key] = current }
+        rateLimits[source] = {
+            [key] = current
+        }
         return false
     end
 
@@ -460,44 +462,167 @@ local function addOwnerRecord(source, payload, enforceAuth)
     return true
 end
 
+local function seedDebugData(source, plate)
+    if not Bridge.IsAdmin(source) then
+        return false, 'notify_not_authorized'
+    end
+
+    if isRateLimited(source, 'debug') then
+        return false, 'notify_rate_limited'
+    end
+
+    local vehicle = DB.EnsureVehicle(plate, nil, nil)
+    if not vehicle then
+        return false, 'notify_report_unavailable'
+    end
+
+    local now = os.time()
+    local jobLabel = Bridge.GetJobLabel(source) or locale('job_label_system')
+    local author = Bridge.GetIdentifier(source)
+    local mileageBase = 12000
+
+    local services = {{
+        type = 'oil_change',
+        notes = 'Oil and filter replaced.'
+    }, {
+        type = 'engine_repair',
+        notes = 'Belts and coolant replaced.'
+    }, {
+        type = 'body_repair',
+        notes = 'Minor panel repair and paint match.'
+    }, {
+        type = 'full_inspection',
+        notes = 'Full inspection completed.'
+    }, {
+        type = 'custom',
+        custom_label = 'Detailing',
+        notes = 'Interior detailing and polish.'
+    }, {
+        type = 'oil_change',
+        notes = 'Routine oil change logged.'
+    }}
+
+    for i = 1, #services do
+        local entry = services[i]
+        DB.AddServiceRecord(vehicle.id, {
+            service_type = entry.type,
+            custom_label = entry.custom_label,
+            notes = entry.notes,
+            job_label = jobLabel,
+            author_identifier = author,
+            created_at = now - (86400 * i),
+            mileage = Config.UseMileage and (mileageBase + (i * 350)) or nil
+        })
+    end
+
+    local incidents = {{
+        type = 'insurance_claim',
+        notes = 'Minor collision claim recorded.'
+    }, {
+        type = 'impound',
+        notes = 'Vehicle impounded for violations.'
+    }, {
+        type = 'police_seizure',
+        notes = 'Held for investigation.'
+    }, {
+        type = 'stolen_report',
+        notes = 'Reported stolen and later recovered.'
+    }}
+
+    for i = 1, #incidents do
+        local entry = incidents[i]
+        local typeConfig = Utils.getIncidentType(entry.type)
+        DB.AddIncidentRecord(vehicle.id, {
+            incident_type = entry.type,
+            custom_label = nil,
+            notes = entry.notes,
+            job_label = jobLabel,
+            author_identifier = author,
+            created_at = now - (86400 * (i + 2)),
+            is_private = typeConfig and typeConfig.private or false
+        })
+    end
+
+    local ownerStatuses = {'valid', 'expired', 'valid'}
+    local ownerStart = DB.GetNextOwnerIndex(vehicle.id)
+
+    for i = 1, #ownerStatuses do
+        DB.AddOwnerRecord(vehicle.id, {
+            owner_index = ownerStart + (i - 1),
+            owner_identifier = ('owner-%s'):format(ownerStart + (i - 1)),
+            author_identifier = author,
+            registration_status = ownerStatuses[i],
+            notes = 'Ownership transfer recorded.',
+            created_at = now - (86400 * (i + 4))
+        })
+    end
+
+    DB.UpdateVehicleRegistration(vehicle.id, ownerStatuses[#ownerStatuses])
+    return true
+end
+
 lib.callback.register(Shared.Callbacks.GetReport, function(source, plate)
     if isRateLimited(source, 'report') then
-        return { ok = false, reason = 'rate_limited' }
+        return {
+            ok = false,
+            reason = 'rate_limited'
+        }
     end
 
     local normalized = Utils.normalizePlate(plate)
     if not Utils.isValidPlate(normalized) then
-        return { ok = false, reason = 'invalid_plate' }
+        return {
+            ok = false,
+            reason = 'invalid_plate'
+        }
     end
 
     local report = DB.GetReportByPlate(normalized)
     if not report then
-        return { ok = false, reason = 'not_found' }
+        return {
+            ok = false,
+            reason = 'not_found'
+        }
     end
 
     local job = Bridge.GetJob(source)
     local jobName = job and job.name or nil
     local sanitized = sanitizeReport(report, jobName, Bridge.IsAdmin(source))
 
-    return { ok = true, data = sanitized }
+    return {
+        ok = true,
+        data = sanitized
+    }
 end)
 
 lib.callback.register(Shared.Callbacks.GetVin, function(source, plate)
     if isRateLimited(source, 'vin') then
-        return { ok = false, reason = 'rate_limited' }
+        return {
+            ok = false,
+            reason = 'rate_limited'
+        }
     end
 
     local normalized = Utils.normalizePlate(plate)
     if not Utils.isValidPlate(normalized) then
-        return { ok = false, reason = 'invalid_plate' }
+        return {
+            ok = false,
+            reason = 'invalid_plate'
+        }
     end
 
     local vehicle = DB.EnsureVehicle(normalized, nil, nil)
     if not vehicle then
-        return { ok = false, reason = 'not_found' }
+        return {
+            ok = false,
+            reason = 'not_found'
+        }
     end
 
-    return { ok = true, vin = vehicle.vin }
+    return {
+        ok = true,
+        vin = vehicle.vin
+    }
 end)
 
 RegisterNetEvent(Shared.ServerEvents.AddService, function(payload)
@@ -533,6 +658,23 @@ RegisterNetEvent(Shared.ServerEvents.AddOwner, function(payload)
     notify(source, 'notify_owner_added', 'success')
 end)
 
+RegisterNetEvent(Shared.ServerEvents.DebugSeed, function(payload)
+    local source = source
+    local plate, plateError = validatePlate(payload)
+    if not plate then
+        notify(source, plateError or 'notify_invalid_plate', 'error')
+        return
+    end
+
+    local ok, errorKey = seedDebugData(source, plate)
+    if not ok then
+        notify(source, errorKey or 'notify_report_unavailable', 'error')
+        return
+    end
+
+    notify(source, 'notify_debug_seeded', 'success')
+end)
+
 local function registerCommand(commandConfig, eventName)
     if not commandConfig or not commandConfig.name then
         return
@@ -546,7 +688,12 @@ local function registerCommand(commandConfig, eventName)
             return
         end
 
-        if commandConfig.job and not isAuthorized(source, commandConfig.job) then
+        if commandConfig.adminOnly then
+            if not Bridge.IsAdmin(source) then
+                notify(source, 'notify_not_authorized', 'error')
+                return
+            end
+        elseif commandConfig.job and not isAuthorized(source, commandConfig.job) then
             notify(source, 'notify_not_authorized', 'error')
             return
         end
@@ -560,17 +707,42 @@ registerCommand(Config.Commands.incident, Shared.Events.OpenIncidentInput)
 registerCommand(Config.Commands.owneredit, Shared.Events.OpenOwnerInput)
 registerCommand(Config.Commands.carfax, Shared.Events.OpenReport)
 registerCommand(Config.Commands.vin, Shared.Events.OpenVinLookup)
+registerCommand(Config.Commands.debugmode, Shared.Events.OpenDebugMode)
 
 exports('AddService', function(plate, data)
-    return addServiceRecord(0, { plate = plate, service_type = data and data.service_type, custom_label = data and data.custom_label, notes = data and data.notes, job_label = data and data.job_label, author_identifier = data and data.author_identifier, mileage = data and data.mileage, vin = data and data.vin }, false)
+    return addServiceRecord(0, {
+        plate = plate,
+        service_type = data and data.service_type,
+        custom_label = data and data.custom_label,
+        notes = data and data.notes,
+        job_label = data and data.job_label,
+        author_identifier = data and data.author_identifier,
+        mileage = data and data.mileage,
+        vin = data and data.vin
+    }, false)
 end)
 
 exports('AddIncident', function(plate, data)
-    return addIncidentRecord(0, { plate = plate, incident_type = data and data.incident_type, custom_label = data and data.custom_label, notes = data and data.notes, job_label = data and data.job_label, author_identifier = data and data.author_identifier, vin = data and data.vin }, false)
+    return addIncidentRecord(0, {
+        plate = plate,
+        incident_type = data and data.incident_type,
+        custom_label = data and data.custom_label,
+        notes = data and data.notes,
+        job_label = data and data.job_label,
+        author_identifier = data and data.author_identifier,
+        vin = data and data.vin
+    }, false)
 end)
 
 exports('AddOwnerChange', function(plate, data)
-    return addOwnerRecord(0, { plate = plate, registration_status = data and data.registration_status, notes = data and data.notes, owner_identifier = data and data.owner_identifier, author_identifier = data and data.author_identifier, vin = data and data.vin }, false)
+    return addOwnerRecord(0, {
+        plate = plate,
+        registration_status = data and data.registration_status,
+        notes = data and data.notes,
+        owner_identifier = data and data.owner_identifier,
+        author_identifier = data and data.author_identifier,
+        vin = data and data.vin
+    }, false)
 end)
 
 exports('GetReport', function(plate)
