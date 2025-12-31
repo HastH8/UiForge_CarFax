@@ -5,7 +5,7 @@ lua54 'yes'
 name 'UiForge CarFax'
 author 'UiForge - Ked.ss'
 description 'In-game CarFax style vehicle history system.'
-version '1.0.0'
+version '1.0.2'
 
 dependencies {'ox_lib', 'oxmysql'}
 
