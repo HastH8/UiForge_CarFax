@@ -1,4 +1,8 @@
 local isOpen = false
+local physicalPed = nil
+local physicalZone = nil
+local isInPhysicalZone = false
+local targetSystem = nil
 
 local function getVehicleTarget()
     local ped = PlayerPedId()
@@ -328,6 +332,271 @@ local function openVinLookup()
     })
 end
 
+local function isResourceStarted(name)
+    local state = GetResourceState(name)
+    return state == 'started' or state == 'starting'
+end
+
+local function detectTargetSystem()
+    if targetSystem then
+        return targetSystem
+    end
+
+    local configured = Config.Target or 'auto'
+    if configured ~= 'auto' then
+        targetSystem = configured
+        return targetSystem
+    end
+
+    if isResourceStarted('ox_target') then
+        targetSystem = 'ox'
+        return targetSystem
+    end
+
+    if isResourceStarted('qb-target') then
+        targetSystem = 'qb'
+        return targetSystem
+    end
+
+    targetSystem = 'none'
+    return targetSystem
+end
+
+local function spawnPhysicalPed()
+    if physicalPed and DoesEntityExist(physicalPed) then
+        return physicalPed
+    end
+
+    local config = Config.PhysicalReport and Config.PhysicalReport.ped
+    if not config or not config.coords or not config.model then
+        return nil
+    end
+
+    local modelHash = type(config.model) == 'number' and config.model or joaat(config.model)
+    lib.requestModel(modelHash)
+
+    physicalPed = CreatePed(0, modelHash, config.coords.x, config.coords.y, config.coords.z, config.heading or 0.0, false, true)
+    SetModelAsNoLongerNeeded(modelHash)
+    SetEntityInvincible(physicalPed, true)
+    FreezeEntityPosition(physicalPed, true)
+    SetBlockingOfNonTemporaryEvents(physicalPed, true)
+
+    if config.scenario then
+        TaskStartScenarioInPlace(physicalPed, config.scenario, 0, true)
+    end
+
+    return physicalPed
+end
+
+local function createPhysicalZone()
+    if physicalZone then
+        return physicalZone
+    end
+
+    local zoneConfig = Config.PhysicalReport and Config.PhysicalReport.zone
+    if not zoneConfig then
+        return nil
+    end
+
+    local common = {
+        debug = zoneConfig.debug or false,
+        onEnter = function()
+            isInPhysicalZone = true
+        end,
+        onExit = function()
+            isInPhysicalZone = false
+        end
+    }
+
+    if zoneConfig.type == 'sphere' then
+        physicalZone = lib.zones.sphere({
+            coords = zoneConfig.coords,
+            radius = zoneConfig.radius or 2.0,
+            debug = common.debug,
+            onEnter = common.onEnter,
+            onExit = common.onExit
+        })
+        return physicalZone
+    end
+
+    if zoneConfig.type == 'poly' then
+        physicalZone = lib.zones.poly({
+            points = zoneConfig.points or {},
+            thickness = zoneConfig.thickness or 4.0,
+            debug = common.debug,
+            onEnter = common.onEnter,
+            onExit = common.onExit
+        })
+        return physicalZone
+    end
+
+    physicalZone = lib.zones.box({
+        coords = zoneConfig.coords,
+        size = zoneConfig.size or vec3(2.0, 2.0, 2.0),
+        rotation = zoneConfig.rotation or 0.0,
+        debug = common.debug,
+        onEnter = common.onEnter,
+        onExit = common.onExit
+    })
+
+    return physicalZone
+end
+
+local function getVehicleLabel(vehicle)
+    local model = GetEntityModel(vehicle)
+    local display = GetDisplayNameFromVehicleModel(model)
+    local label = GetLabelText(display)
+    if not label or label == 'NULL' then
+        return display
+    end
+    return label
+end
+
+local function getNearbyZoneVehicles()
+    local config = Config.PhysicalReport
+    if not config then
+        return {}
+    end
+
+    local zoneConfig = config.zone or {}
+    local anchor = zoneConfig.coords or (config.ped and config.ped.coords)
+    if not anchor then
+        return {}
+    end
+
+    local radius = config.searchRadius or 12.0
+    local nearby = lib.getNearbyVehicles(anchor, radius, true)
+    local vehicles = {}
+    local seen = {}
+
+    for i = 1, #nearby do
+        local vehicle = nearby[i].vehicle
+        local coords = nearby[i].coords
+
+        if physicalZone and physicalZone.contains and not physicalZone:contains(coords) then
+            goto continue
+        end
+
+        local plate = GetVehicleNumberPlateText(vehicle)
+        plate = Shared.Utils.normalizePlate(plate) or plate
+        if plate and plate ~= '' and not seen[plate] then
+            seen[plate] = true
+            vehicles[#vehicles + 1] = {
+                plate = plate,
+                label = getVehicleLabel(vehicle)
+            }
+        end
+
+        ::continue::
+    end
+
+    table.sort(vehicles, function(a, b)
+        return a.plate < b.plate
+    end)
+
+    return vehicles
+end
+
+local function openPhysicalMenu()
+    if not Config.PhysicalReport or not Config.PhysicalReport.enabled then
+        return
+    end
+
+    if not isInPhysicalZone then
+        lib.notify({
+            type = 'error',
+            description = locale('notify_not_in_zone')
+        })
+        return
+    end
+
+    local vehicles = getNearbyZoneVehicles()
+    if #vehicles == 0 then
+        lib.notify({
+            type = 'error',
+            description = locale('notify_no_vehicles')
+        })
+        return
+    end
+
+    local price = tonumber(Config.PhysicalReport.price) or 0
+    local options = {}
+
+    for i = 1, #vehicles do
+        local entry = vehicles[i]
+        options[#options + 1] = {
+            title = string.format(locale('menu_vehicle_entry'), entry.label, entry.plate),
+            description = price > 0 and locale('menu_vehicle_price', price) or locale('menu_vehicle_free'),
+            icon = 'fa-solid fa-car',
+            onSelect = function()
+                TriggerServerEvent(Shared.ServerEvents.RequestPhysicalReport, {
+                    plate = entry.plate
+                })
+            end
+        }
+    end
+
+    lib.registerContext({
+        id = 'uiforge_carfax_physical',
+        title = locale('menu_physical_title'),
+        options = options
+    })
+
+    lib.showContext('uiforge_carfax_physical')
+end
+
+local function setupPhysicalStation()
+    if not Config.PhysicalReport or not Config.PhysicalReport.enabled then
+        return
+    end
+
+    createPhysicalZone()
+
+    local ped = spawnPhysicalPed()
+    if not ped then
+        return
+    end
+
+    local targetConfig = Config.PhysicalReport.target or {}
+    local label = locale(targetConfig.label or 'target_carfax_request')
+    local icon = targetConfig.icon or 'fa-solid fa-file-lines'
+    local distance = targetConfig.distance or 2.0
+
+    local system = detectTargetSystem()
+    if system == 'ox' then
+        exports.ox_target:addLocalEntity(ped, {
+            {
+                name = 'carfax_physical',
+                label = label,
+                icon = icon,
+                distance = distance,
+                canInteract = function()
+                    return isInPhysicalZone
+                end,
+                onSelect = function()
+                    openPhysicalMenu()
+                end
+            }
+        })
+    elseif system == 'qb' then
+        exports['qb-target']:AddTargetEntity(ped, {
+            options = {
+                {
+                    icon = icon,
+                    label = label,
+                    action = function()
+                        openPhysicalMenu()
+                    end,
+                    canInteract = function()
+                        return isInPhysicalZone
+                    end
+                }
+            },
+            distance = distance
+        })
+    end
+end
+
 local function buildUiLocale()
     return {
         app_title = locale('app_title'),
@@ -365,12 +634,16 @@ local function buildUiLocale()
     }
 end
 
-local function openReport()
+local function openReport(forcedPlate)
     if isOpen then
         return
     end
 
-    local plate = getVehiclePlate()
+    local plate = forcedPlate
+    if not plate or plate == '' then
+        plate = getVehiclePlate()
+    end
+
     if not plate then
         local payload = runDialog('input_report_title', {{
             key = 'plate',
@@ -461,12 +734,16 @@ RegisterNetEvent(Shared.Events.OpenOwnerInput, function()
     openOwnerDialog()
 end)
 
-RegisterNetEvent(Shared.Events.OpenReport, function()
-    openReport()
+RegisterNetEvent(Shared.Events.OpenReport, function(plate)
+    openReport(plate)
 end)
 
 RegisterNetEvent(Shared.Events.OpenVinLookup, function()
     openVinLookup()
+end)
+
+RegisterNetEvent(Shared.Events.OpenPhysicalMenu, function()
+    openPhysicalMenu()
 end)
 
 AddEventHandler('onResourceStop', function(resource)
@@ -475,4 +752,18 @@ AddEventHandler('onResourceStop', function(resource)
     end
 
     closeReport()
+
+    if physicalPed and DoesEntityExist(physicalPed) then
+        DeleteEntity(physicalPed)
+        physicalPed = nil
+    end
+
+    if physicalZone and physicalZone.remove then
+        physicalZone:remove()
+        physicalZone = nil
+    end
+end)
+
+CreateThread(function()
+    setupPhysicalStation()
 end)

@@ -44,6 +44,30 @@ ensure UiForge_CarFax
 - `/carfax` (everyone)
 - `/vin` (everyone)
 
+## Physical Report Desk
+
+Enable the report desk in `config.lua` to spawn a clerk ped and target interaction. Players can request a physical report for vehicles parked in the zone.
+
+- Requires `ox_target` or `qb-target` for interaction.
+- Item handling is routed through `bridge/server.lua` so custom inventories can be added easily.
+- `Config.Target` supports `auto`, `ox`, `qb`, or `none`.
+- `Config.Inventory` supports `auto` or a custom bridge implementation.
+
+### ox_inventory item
+
+Add the item to `ox_inventory/data/items.lua`:
+
+```lua
+['carfax_report'] = {
+    label = 'CarFax Report',
+    weight = 0,
+    consume = 0,
+    stack = false
+}
+```
+
+Metadata is attached automatically (`plate`, `vin`, `report_id`, `label`, `description`) and used when opening the report.
+
 ## Exports
 
 ### AddService

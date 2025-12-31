@@ -121,6 +121,27 @@ local function validateVin(payload)
     return vin
 end
 
+local function validatePhysicalRequest(payload)
+    if type(payload) ~= 'table' then
+        return nil, 'notify_invalid_payload'
+    end
+
+    local plate = Utils.normalizePlate(payload.plate)
+    if not Utils.isValidPlate(plate) then
+        return nil, 'notify_invalid_plate'
+    end
+
+    local vin, vinError = validateVin(payload)
+    if vinError then
+        return nil, vinError
+    end
+
+    return {
+        plate = plate,
+        vin = vin
+    }
+end
+
 local function validateServicePayload(source, payload)
     local plate, plateError = validatePlate(payload)
     if not plate then
@@ -625,6 +646,69 @@ lib.callback.register(Shared.Callbacks.GetVin, function(source, plate)
     }
 end)
 
+RegisterNetEvent(Shared.ServerEvents.RequestPhysicalReport, function(payload)
+    local source = source
+
+    if not Config.PhysicalReport or not Config.PhysicalReport.enabled then
+        notify(source, 'notify_report_unavailable', 'error')
+        return
+    end
+
+    if isRateLimited(source, 'physical') then
+        notify(source, 'notify_rate_limited', 'error')
+        return
+    end
+
+    local data, errorKey = validatePhysicalRequest(payload)
+    if not data then
+        notify(source, errorKey or 'notify_invalid_payload', 'error')
+        return
+    end
+
+    local vehicle = DB.EnsureVehicle(data.plate, data.vin, nil)
+    if not vehicle then
+        notify(source, 'notify_report_unavailable', 'error')
+        return
+    end
+
+    local metadata = {
+        plate = vehicle.plate,
+        vin = vehicle.vin,
+        report_id = vehicle.report_id,
+        label = locale('item_carfax_label'),
+        description = locale('item_carfax_description', vehicle.plate)
+    }
+
+    if not Bridge.CanCarryItem(source, Config.PhysicalReport.item, 1, metadata) then
+        notify(source, 'notify_inventory_full', 'error')
+        return
+    end
+
+    local price = tonumber(Config.PhysicalReport.price) or 0
+    local account = Config.PhysicalReport.moneyType or 'cash'
+
+    if price > 0 and Bridge.GetMoney(source, account) < price then
+        notify(source, 'notify_insufficient_funds', 'error')
+        return
+    end
+
+    if price > 0 and not Bridge.RemoveMoney(source, account, price, 'carfax_report') then
+        notify(source, 'notify_insufficient_funds', 'error')
+        return
+    end
+
+    local added = Bridge.AddItem(source, Config.PhysicalReport.item, 1, metadata)
+    if not added then
+        if price > 0 then
+            Bridge.AddMoney(source, account, price, 'carfax_refund')
+        end
+        notify(source, 'notify_inventory_full', 'error')
+        return
+    end
+
+    notify(source, 'notify_physical_report_issued', 'success')
+end)
+
 RegisterNetEvent(Shared.ServerEvents.AddService, function(payload)
     local source = source
     local ok, errorKey = addServiceRecord(source, payload, true)
@@ -757,3 +841,18 @@ exports('GetReport', function(plate)
 
     return sanitizeReport(report, nil, true)
 end)
+
+local function handleReportItemUse(source, metadata)
+    if type(metadata) ~= 'table' or not metadata.plate then
+        notify(source, 'notify_invalid_report_item', 'error')
+        return
+    end
+
+    TriggerClientEvent(Shared.Events.OpenReport, source, metadata.plate)
+end
+
+if Config.PhysicalReport and Config.PhysicalReport.enabled and Config.PhysicalReport.item then
+    Bridge.RegisterUsableItem(Config.PhysicalReport.item, function(source, metadata)
+        handleReportItemUse(source, metadata)
+    end)
+end

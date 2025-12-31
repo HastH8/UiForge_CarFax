@@ -1,6 +1,8 @@
 Config = {}
 
 Config.Framework = 'auto'
+Config.Inventory = 'auto'
+Config.Target = 'auto'
 Config.Debug = true
 Config.RateLimitMs = 1500
 
@@ -12,6 +14,32 @@ Config.VinLength = 17
 Config.DefaultRegistrationStatus = 'valid'
 Config.ReportIdPattern = 'CARFAX-AAAA-111111'
 Config.VinPattern = 'AAAAAAAA111111111'
+
+Config.PhysicalReport = {
+    enabled = true,
+    price = 250,
+    moneyType = 'cash',
+    item = 'carfax_report',
+    searchRadius = 12.0,
+    ped = {
+        model = 's_m_m_highsec_01',
+        coords = vec3(441.2, -981.9, 30.7),
+        heading = 92.0,
+        scenario = 'WORLD_HUMAN_CLIPBOARD'
+    },
+    zone = {
+        type = 'box',
+        coords = vec3(441.2, -981.9, 30.7),
+        size = vec3(6.0, 6.0, 4.0),
+        rotation = 0.0,
+        debug = false
+    },
+    target = {
+        label = 'target_carfax_request',
+        icon = 'fa-solid fa-file-lines',
+        distance = 2.0
+    }
+}
 
 Config.AdminGroups = {'admin', 'god'}
 Config.AdminAce = 'uiforge.carfax'

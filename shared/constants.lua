@@ -8,6 +8,7 @@ Shared.Events = {
     OpenOwnerInput = Shared.Resource .. ':openOwnerInput',
     OpenReport = Shared.Resource .. ':openReport',
     OpenVinLookup = Shared.Resource .. ':openVinLookup',
+    OpenPhysicalMenu = Shared.Resource .. ':openPhysicalMenu',
     Notify = Shared.Resource .. ':notify'
 }
 
@@ -15,6 +16,7 @@ Shared.ServerEvents = {
     AddService = Shared.Resource .. ':addService',
     AddIncident = Shared.Resource .. ':addIncident',
     AddOwner = Shared.Resource .. ':addOwner',
+    RequestPhysicalReport = Shared.Resource .. ':requestPhysicalReport',
     DebugSeed = Shared.Resource .. ':debugSeed'
 }
 
