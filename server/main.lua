@@ -308,7 +308,6 @@ end
 local function sanitizeReport(report, jobName, isAdmin)
     local showIdentifiers = isAdmin or (jobName and Config.ReportVisibility.showIdentifiers[jobName]) or false
     local showPrivateIncidents = isAdmin or (jobName and Config.ReportVisibility.showPrivateIncidents[jobName]) or false
-
     local data = {
         generated_at = os.time(),
         vehicle = {
@@ -325,7 +324,7 @@ local function sanitizeReport(report, jobName, isAdmin)
             show_identifiers = showIdentifiers
         }
     }
-
+    
     for i = 1, #report.services do
         local record = report.services[i]
         table.insert(data.services, {
@@ -339,27 +338,23 @@ local function sanitizeReport(report, jobName, isAdmin)
             mileage = record.mileage
         })
     end
-
+    
     for i = 1, #report.incidents do
         local record = report.incidents[i]
-        if record.is_private == 1 and not showPrivateIncidents then
-            goto continue
+        if not (record.is_private == 1 and not showPrivateIncidents) then
+            table.insert(data.incidents, {
+                id = record.id,
+                type = record.incident_type,
+                label = buildIncidentLabel(record),
+                notes = record.notes,
+                job_label = record.job_label or locale('job_label_system'),
+                author_identifier = showIdentifiers and record.author_identifier or nil,
+                created_at = record.created_at,
+                is_private = record.is_private == 1
+            })
         end
-
-        table.insert(data.incidents, {
-            id = record.id,
-            type = record.incident_type,
-            label = buildIncidentLabel(record),
-            notes = record.notes,
-            job_label = record.job_label or locale('job_label_system'),
-            author_identifier = showIdentifiers and record.author_identifier or nil,
-            created_at = record.created_at,
-            is_private = record.is_private == 1
-        })
-
-        ::continue::
     end
-
+    
     for i = 1, #report.owners do
         local record = report.owners[i]
         table.insert(data.owners, {
@@ -372,7 +367,7 @@ local function sanitizeReport(report, jobName, isAdmin)
             created_at = record.created_at
         })
     end
-
+    
     return data
 end
 
