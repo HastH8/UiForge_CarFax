@@ -453,22 +453,22 @@ local function getNearbyZoneVehicles()
     if not config then
         return {}
     end
-    
+
     local zoneConfig = config.zone or {}
     local anchor = zoneConfig.coords or (config.ped and config.ped.coords)
     if not anchor then
         return {}
     end
-    
+
     local radius = config.searchRadius or 12.0
     local nearby = lib.getNearbyVehicles(anchor, radius, true)
     local vehicles = {}
     local seen = {}
-    
+
     for i = 1, #nearby do
         local vehicle = nearby[i].vehicle
         local coords = nearby[i].coords
-        
+
         if not (physicalZone and physicalZone.contains and not physicalZone:contains(coords)) then
             local plate = GetVehicleNumberPlateText(vehicle)
             plate = Shared.Utils.normalizePlate(plate) or plate
@@ -481,11 +481,11 @@ local function getNearbyZoneVehicles()
             end
         end
     end
-    
+
     table.sort(vehicles, function(a, b)
         return a.plate < b.plate
     end)
-    
+
     return vehicles
 end
 
