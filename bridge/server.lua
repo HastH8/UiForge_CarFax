@@ -55,24 +55,11 @@ local function detectInventory()
 end
 
 local function initQb()
-    local ok, core = pcall(function()
-        return exports['qb-core']:GetCoreObject()
-    end)
-
-    if ok then
-        QBCore = core
-    end
+    QBCore = exports['qb-core']:GetCoreObject()
 end
 
-
 local function initEsx()
-    local ok, core = pcall(function()
-        return exports['es_extended']:getSharedObject()
-    end)
-
-    if ok then
-        ESX = core
-    end
+    ESX = exports['es_extended']:getSharedObject()
 end
 
 Bridge.Framework = detectFramework()
@@ -109,15 +96,7 @@ function Bridge.GetPlayer(source)
     end
 
     if Bridge.Framework == 'qbox' then
-        local ok, player = pcall(function()
-            return exports['qbx_core']:GetPlayer(source)
-        end)
-
-        if ok then
-            return player
-        end
-
-        return nil
+        return exports['qbx_core']:GetPlayer(source)
     end
 
     if Bridge.Framework == 'esx' then
@@ -129,13 +108,7 @@ end
 
 function Bridge.GetMoney(source, account)
     if Bridge.Framework == 'qbox' then
-        local ok, amount = pcall(function()
-            return exports.qbx_core:GetMoney(source, account)
-        end)
-        if ok then
-            return amount or 0
-        end
-        return 0
+        return exports.qbx_core:GetMoney(source, account) or 0
     end
 
     if Bridge.Framework == 'qb' then
@@ -250,10 +223,7 @@ end
 
 function Bridge.CanCarryItem(source, item, count, metadata)
     if Bridge.Inventory == 'ox' then
-        local ok, canCarry = pcall(function()
-            return exports.ox_inventory:CanCarryItem(source, item, count, metadata)
-        end)
-        return ok and canCarry or false
+        return exports.ox_inventory:CanCarryItem(source, item, count, metadata)
     end
 
     return true
@@ -261,11 +231,7 @@ end
 
 function Bridge.AddItem(source, item, count, metadata)
     if Bridge.Inventory == 'ox' then
-        local ok, success = pcall(function()
-            return exports.ox_inventory:AddItem(source, item, count, metadata)
-        end)
-
-        return ok and success or false
+        return exports.ox_inventory:AddItem(source, item, count, metadata)
     end
 
     if Bridge.Framework == 'qbox' then
