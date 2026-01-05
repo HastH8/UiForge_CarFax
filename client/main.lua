@@ -37,18 +37,14 @@ local function getJgMileage(vehicle, plate)
         return nil
     end
 
-    local ok, mileage
+    local mileage
     if vehicle and vehicle ~= 0 then
-        ok, mileage = pcall(function()
-            return exports[resource]:getMileageByEntity(vehicle)
-        end)
+        mileage = exports[resource]:getMileageByEntity(vehicle)
     elseif plate then
-        ok, mileage = pcall(function()
-            return exports[resource]:getMileageByPlate(plate)
-        end)
+        mileage = exports[resource]:getMileageByPlate(plate)
     end
 
-    if not ok or mileage == false or mileage == nil then
+    if mileage == false or mileage == nil then
         return nil
     end
 
@@ -457,43 +453,39 @@ local function getNearbyZoneVehicles()
     if not config then
         return {}
     end
-
+    
     local zoneConfig = config.zone or {}
     local anchor = zoneConfig.coords or (config.ped and config.ped.coords)
     if not anchor then
         return {}
     end
-
+    
     local radius = config.searchRadius or 12.0
     local nearby = lib.getNearbyVehicles(anchor, radius, true)
     local vehicles = {}
     local seen = {}
-
+    
     for i = 1, #nearby do
         local vehicle = nearby[i].vehicle
         local coords = nearby[i].coords
-
-        if physicalZone and physicalZone.contains and not physicalZone:contains(coords) then
-            goto continue
+        
+        if not (physicalZone and physicalZone.contains and not physicalZone:contains(coords)) then
+            local plate = GetVehicleNumberPlateText(vehicle)
+            plate = Shared.Utils.normalizePlate(plate) or plate
+            if plate and plate ~= '' and not seen[plate] then
+                seen[plate] = true
+                vehicles[#vehicles + 1] = {
+                    plate = plate,
+                    label = getVehicleLabel(vehicle)
+                }
+            end
         end
-
-        local plate = GetVehicleNumberPlateText(vehicle)
-        plate = Shared.Utils.normalizePlate(plate) or plate
-        if plate and plate ~= '' and not seen[plate] then
-            seen[plate] = true
-            vehicles[#vehicles + 1] = {
-                plate = plate,
-                label = getVehicleLabel(vehicle)
-            }
-        end
-
-        ::continue::
     end
-
+    
     table.sort(vehicles, function(a, b)
         return a.plate < b.plate
     end)
-
+    
     return vehicles
 end
 
